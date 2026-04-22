@@ -14,16 +14,20 @@
 
 import random
 import time
+from asyncio.unix_events import SelectorEventLoop
 from enum import Enum
+from this import s
 
 import game
 import util
+from capture import GameState
 from captureAgents import CaptureAgent
-from game import Directions
+from game import Directions, Game
 
 #################
 # Team creation #
 #################
+
 
 def createTeam(firstIndex, secondIndex, isRed, first="DummyAgent", second="DummyAgent"):
     """
@@ -49,30 +53,94 @@ def createTeam(firstIndex, secondIndex, isRed, first="DummyAgent", second="Dummy
 # Agents #
 ##########
 
-        
 
-class MyAgent(CaptureAgent):
+def distL1(a, b):
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
-    # constants to do state boundaries
-    CAPSULE_TIMER_WARNING = 0.5
-    MANY_POINTS_THRESHHOLD = 5
-    MAX_DIST_CHASE_CAPSULE = 0.1
 
-    class Role(Enum):
-        ATTACK = 1
-        DEFENSE = 2
+def distL1WithEnemyPos(
+    a, b, enemyPosBeliefTable: list[list[float]], suicidalness: float
+):
+    """
+    Punishes paths that are potentially close to enemies.
 
-    class AttackMode(Enum):
-        RUN_HOME = 1
-        TO_CAPSULE = 2
-        GREEDY_POINT = 3
+    Args:
+        a: The starting position.
+        b: The ending position.
+        enemyPosBeliefTable: A 2D list representing the belief table of enemy positions.
+        suicidalness: A float representing the agent's suicidalness factor.
+            Higher values result in more aggressive behavior, i.e. the agent will care less about the enemies.
+    """
+    dL1 = distL1(a, b)
+    dangerFactor = 0.0
 
-    class DefendMode(Enum):
-        PATROL = 1
-        CHASE = 2
-        FEARED = 3
-        
-    '''
+    minx = min(a[0], b[0])
+    maxx = max(a[0], b[0])
+    miny = min(a[1], b[1])
+    maxy = max(a[1], b[1])
+    area = (maxx - minx) * (maxy - miny)
+
+    for i in range(minx, maxx + 1):
+        for j in range(miny, maxy + 1):
+            dangerFactor += enemyPosBeliefTable[i][j]
+    # This punishes paths that are potentially close to enemies
+    return dL1 + dangerFactor * (1 / suicidalness) / area
+
+
+def closestFoodHeuristic(
+    state: GameState,
+    agentIndex: int,
+    enemyPosBeliefTable: list[list[float]],
+    suicidalness: float,
+):
+    """
+    This heuristic returns the distance to the closest food pellet
+    """
+    pos = state.getAgentPosition(agentIndex)
+    if pos is None:
+        return float("inf")
+    foods = state.getBlueFood() if state.isOnRedTeam(agentIndex) else state.getRedFood()
+    closest = float("inf")
+    for food in foods:
+        distToFood = min(
+            closest, distL1WithEnemyPos(pos, food, enemyPosBeliefTable, suicidalness)
+        )
+        closest = min(closest, distToFood)
+    return closest
+
+
+class GenericPacmanProblem:
+    def __init__(self, agent: CaptureAgent, agentIndex: int, startState: GameState):
+        self.agent = agent
+        self.startState = startState
+
+    def getStartState(self):
+        return self.agent.getCurrentObservation()
+
+    def isGoalState(self, gameState: GameState):
+        raise NotImplementedError()
+
+    def getSuccessors(self, gameState: GameState):
+        legalActions = gameState.getLegalActions(self.agent.index)
+        return [
+            gameState.generateSuccessor(self.agent.index, action)
+            for action in legalActions
+        ]
+
+
+class RushFoodProblem(GenericPacmanProblem):
+    def __init__(self, agent: CaptureAgent, agentIndex: int, startState: GameState):
+        super().__init__(agent, agentIndex, startState)
+        self.foods = self.agent.getFood(self.startState)
+
+    def getStartState(self):
+        self.foods = self.agent.getFood(self.startState)
+
+    def isGoalState(self, gameState: GameState):
+        pos = gameState.getAgentPosition(self.agent.index)
+        return self.foods[pos[0]][pos[1]]
+
+    """
     Defines an agent with attack and defense modes.
     If attack:
         if have much thingy:
@@ -98,23 +166,13 @@ class MyAgent(CaptureAgent):
             else:
                 keep distance from pacman, dont get zoned
 
-    '''
+    """
 
     # problem classes for each state of the agent
 
-    class RushFoodProblem:
-        def __init__(self, gameState):
-            self.start_gameState = gameState
-
-        def getStartState():
-            return self.start_gameState
-
-        def isGoalState():
-            if gameState.
-
-
     def registerInitialState(self, gameState):
-        CaptureAgent.registerInitialState(gameState)
+        super().registerInitialState(gameState)
+        self.suicidalness = 0.0
 
 
 class DummyAgent(CaptureAgent):
@@ -135,7 +193,7 @@ class DummyAgent(CaptureAgent):
         self.distancer.getDistance(p1, p2)
 
         IMPORTANT: This method may run for at most 15 seconds.
-        
+
         """
 
         """
@@ -161,5 +219,3 @@ class DummyAgent(CaptureAgent):
         """
 
         return random.choice(actions)
-
-    
