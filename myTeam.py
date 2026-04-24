@@ -74,18 +74,17 @@ def aStarSearch(problem, heuristic=lambda s, p: 0):
     return []
 
 
-##################
+####################
 # Pathing Problems #
-##################
+####################
 # States here are positions (x, y). The agent chooses an action, then A* from
 # the resulting position to a goal. Actions are computed from the position delta.
 
 
 class PositionProblem(SearchProblem):
     """
-    A* over grid positions. Step cost = 1 + danger(next_pos), where danger is
-    supplied by the agent. Keeps A* admissible: heuristic is raw maze distance,
-    danger goes into the cost, not the heuristic.
+    Base search problem for the maze. Thus goal_fn and danger_fn are
+    user inputed.
     """
 
     def __init__(self, walls, start, goal_fn, danger_fn=None):
@@ -258,6 +257,7 @@ class BaseCaptureAgent(CaptureAgent):
         return self.pickAction(gameState)
 
     def pickAction(self, gameState):
+        # We define this on our attack/defend agents
         util.raiseNotDefined()
 
     # --- helpers -----------------------------------------------------------
