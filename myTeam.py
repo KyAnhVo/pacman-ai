@@ -16,13 +16,124 @@ import random
 import time
 from asyncio.unix_events import SelectorEventLoop
 from enum import Enum
-from this import s
 
 import game
 import util
 from capture import GameState
 from captureAgents import CaptureAgent
 from game import Directions, Game
+
+##################
+# Search Problem #
+##################
+# Copied straight from the homework 1 btw
+
+
+class SearchProblem:
+    """
+    This class outlines the structure of a search problem, but doesn't implement
+    any of the methods (in object-oriented terminology: an abstract class).
+
+    You do not need to change anything in this class, ever.
+    """
+
+    def getStartState(self):
+        """
+        Returns the start state for the search problem.
+        """
+        util.raiseNotDefined()
+
+    def isGoalState(self, state):
+        """
+          state: Search state
+
+        Returns True if and only if the state is a valid goal state.
+        """
+        util.raiseNotDefined()
+
+    def getSuccessors(self, state):
+        """
+          state: Search state
+
+        For a given state, this should return a list of triples, (successor,
+        action, stepCost), where 'successor' is a successor to the current
+        state, 'action' is the action required to get there, and 'stepCost' is
+        the incremental cost of expanding to that successor.
+        """
+        util.raiseNotDefined()
+
+    def getCostOfActions(self, actions):
+        """
+         actions: A list of actions to take
+
+        This method returns the total cost of a particular sequence of actions.
+        The sequence must be composed of legal moves.
+        """
+        util.raiseNotDefined()
+
+
+def nullHeuristic(state, problem=None):
+    """
+    A heuristic function estimates the cost from the current state to the nearest
+    goal in the provided SearchProblem.  This heuristic is trivial.
+    """
+    return 0
+
+
+def aStarSearch(problem, heuristic=nullHeuristic):
+    """Search the node that has the lowest combined cost and heuristic first."""
+    "*** YOUR CODE HERE ***"
+    initState = problem.getStartState()
+    visited = set()
+
+    # current parent, key = state, value = (parent state, move, cost to state if use this path)
+    parent = {}
+    parent[initState] = (None, None, 0)
+
+    # distance
+    dist = {}
+
+    # main queue
+    queue = util.PriorityQueue()
+    queue.push(initState, 0)
+
+    while not queue.isEmpty():
+        currState = queue.pop()
+        if currState in visited:
+            continue
+        visited.add(currState)
+
+        if parent[currState][0] is None:
+            dist[currState] = 0
+        else:
+            dist[currState] = parent[currState][2]
+
+        # check end
+        if problem.isGoalState(currState):
+            # implement reverse dir
+            moves = []
+            # print(moves)
+            while parent[currState][0] != None:
+                moves.append(parent[currState][1])
+                currState = parent[currState][0]
+            moves.reverse()
+            return moves
+
+        # do children enqueueing
+        for child, move, cost in problem.getSuccessors(currState):
+            if child in visited:
+                continue
+            if child in parent:
+                _, _, currCost = parent[child]
+                if currCost < dist[currState] + cost:
+                    continue
+            parent[child] = (currState, move, dist[currState] + cost)
+            queue.push(child, parent[child][2] + heuristic(child, problem))
+
+    return []
+
+
+astar = aStarSearch
 
 #################
 # Team creation #
@@ -140,6 +251,8 @@ class RushFoodProblem(GenericPacmanProblem):
         pos = gameState.getAgentPosition(self.agent.index)
         return self.foods[pos[0]][pos[1]]
 
+
+class MyTeamAgent(CaptureAgent):
     """
     Defines an agent with attack and defense modes.
     If attack:
@@ -171,7 +284,7 @@ class RushFoodProblem(GenericPacmanProblem):
     # problem classes for each state of the agent
 
     def registerInitialState(self, gameState):
-        super().registerInitialState(gameState)
+        return super().registerInitialState(gameState)
         self.suicidalness = 0.0
 
 
