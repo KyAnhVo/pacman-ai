@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+    <head>
+        <style>
+            body {
+                font-family: sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 900px;
+                margin: auto;
+                padding: 20px;
+            }
+            h1 {
+                color: #2c3e50;
+                border-bottom: 2px solid #eee;
+            }
+            h2 {
+                color: #e67e22;
+                margin-top: 30px;
+            }
+            h3 {
+                color: #2980b9;
+            }
+            code {
+                background: #f4f4f4;
+                padding: 2px 4px;
+                border-radius: 4px;
+            }
+            .method {
+                margin-left: 20px;
+                margin-bottom: 15px;
+            }
+            .property {
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>myTeam.py Implementation Mechanics</h1>
+
+        <h2>Global Search Utilities</h2>
+        <ul>
+            <li class="method">
+                <code>SearchProblem (Class)</code>: An abstract interface
+                defining the requirements for any state-space search. It forces
+                subclasses to implement <code>getStartState()</code>,
+                <code>isGoalState()</code>, and <code>getSuccessors()</code> to
+                ensure compatibility with search algorithms.
+            </li>
+            <li class="method">
+                <code>aStarSearch</code>: A generic implementation of the A*
+                algorithm. <br /><strong>How:</strong> It uses a
+                <code>PriorityQueue</code> to explore states based on $f(n) =
+                g(n) + h(n)$, where $g(n)$ is the path cost and $h(n)$ is the
+                heuristic. It tracks <code>best_g</code> to ensure only the
+                cheapest path to any state is expanded, effectively preventing
+                redundant work in cycles.
+            </li>
+        </ul>
+
+        <h2>Class: PositionProblem</h2>
+        <p>
+            <strong>Goal:</strong> Transform the Pacman grid into a formal
+            search problem for A*.
+        </p>
+        <p>
+            <strong>How:</strong> By mapping (x, y) coordinates to states and
+            calculating successor costs based on wall collisions and a dynamic
+            <code>danger_fn</code> cost modifier.
+        </p>
+
+        <h2>Class: BeliefTracker</h2>
+        <p>
+            <strong>Goal:</strong> Maintain a real-time estimate of where hidden
+            opponents are located.
+        </p>
+        <p>
+            <strong>How:</strong> By mapping sonar distance measurements to a
+            grid of probabilities and iteratively updating them as time passes
+            and new observations arrive.
+        </p>
+        <ul>
+            <li class="method">
+                <code>_noise_prior</code>: Calculates the likelihood of a noisy
+                reading given a true distance by defining a uniform distribution
+                over the sonar noise range.
+            </li>
+            <li class="method">
+                <code>observe</code>: Updates belief grids by multiplying
+                previous probabilities with new observation data, zeroing out
+                squares that are definitely not the opponent, and re-normalizing
+                the sum to 1.
+            </li>
+            <li class="method">
+                <code>elapseTime</code>: Spreads probability mass from each cell
+                to its adjacent legal neighbors, effectively "blurring" the
+                agent's knowledge to account for the opponent moving one square
+                in any direction.
+            </li>
+            <li class="method">
+                <code>danger_grid</code>: Computes a heatmap by summing the
+                probability of every non-scared ghost across all positions,
+                weighted by their current belief distribution.
+            </li>
+        </ul>
+
+        <h2>Class: BaseCaptureAgent</h2>
+        <p>
+            <strong>Goal:</strong> Provide a unified framework for pathfinding
+            and decision-making.
+        </p>
+        <p>
+            <strong>How:</strong> By centralizing shared map data (walls,
+            boundaries) and standardizing the communication between the tactical
+            logic and the search algorithms.
+        </p>
+        <ul>
+            <li class="method">
+                <code>buildDangerFn</code>: Returns a closure that maps a
+                position to a cost by checking the <code>danger_grid</code> and
+                applying a neighborhood penalty to account for proximity to
+                ghosts.
+            </li>
+            <li class="method">
+                <code>planTo</code>: Initiates a search by creating a
+                <code>PositionProblem</code> instance that combines standard
+                grid traversal with the <code>danger_fn</code> cost modifier.
+            </li>
+            <li class="method">
+                <code>pickSafestLegal</code>: Scans all valid immediate moves
+                and ranks them by their danger cost, selecting the lowest-cost
+                action to avoid immediate collision.
+            </li>
+        </ul>
+
+        <h2>Class: OffenseAgent</h2>
+        <p>
+            <strong>Goal:</strong> Maximize food collection while minimizing
+            risk of capture.
+        </p>
+        <p>
+            <strong>How:</strong> By dynamically switching between goal-seeking
+            (food) and survival (fleeing) based on internal state triggers like
+            current load, ghost proximity, and proximity to capsules.
+        </p>
+        <ul>
+            <li class="method">
+                <code>_ghostAdjacent</code>: Evaluates risk by querying the
+                <code>BeliefTracker</code> for the most likely position of any
+                non-scared ghost and checking the maze distance against a fixed
+                radius.
+            </li>
+        </ul>
+
+        <h2>Class: DefenseAgent</h2>
+        <p><strong>Goal:</strong> Patrol boundaries and intercept intruders.</p>
+        <p>
+            <strong>How:</strong> By prioritizing the interception of detected
+            invaders, or, in the absence of sightings, patrolling locations that
+            provide the best coverage of the home territory.
+        </p>
+        <ul>
+            <li class="method">
+                <code>_keepDistance</code>: Forces the agent to oscillate or
+                hover at a specific maze distance from an intruder, preventing
+                the agent from over-committing to a chase if it is currently
+                "scared".
+            </li>
+        </ul>
+    </body>
+</html>

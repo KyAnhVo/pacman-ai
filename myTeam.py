@@ -14,7 +14,6 @@
 
 import random
 import time
-from asyncio.unix_events import SelectorEventLoop
 from enum import Enum
 
 import game
@@ -29,7 +28,7 @@ from game import Actions, Directions, Game
 
 
 def createTeam(
-    firstIndex, secondIndex, isRed, first="DefenseAgent", second="OffenseAgent"
+    firstIndex, secondIndex, isRed, first="OffenseAgent", second="OffenseAgent"
 ):
     return [eval(first)(firstIndex), eval(second)(secondIndex)]
 
@@ -41,13 +40,13 @@ def createTeam(
 
 class SearchProblem:
     def getStartState(self):
-        util.raiseNotDefined()
+        raise NotImplementedError()
 
     def isGoalState(self, state):
-        util.raiseNotDefined()
+        raise NotImplementedError()
 
     def getSuccessors(self, state):
-        util.raiseNotDefined()
+        raise NotImplementedError()
 
 
 def aStarSearch(problem, heuristic=lambda s, p: 0):
@@ -128,7 +127,7 @@ class BeliefTracker:
     Transition model: uniform over legal moves (including stay, cheaply).
     """
 
-    def __init__(self, agent, gameState):
+    def __init__(self, agent, gameState: GameState):
         self.agent = agent
         self.opponents = agent.getOpponents(gameState)
         self.walls = gameState.getWalls()
@@ -153,7 +152,7 @@ class BeliefTracker:
         half = (SONAR_NOISE_RANGE - 1) // 2
         return 1.0 / SONAR_NOISE_RANGE, half
 
-    def observe(self, gameState):
+    def observe(self, gameState: GameState):
         my_pos = gameState.getAgentPosition(self.agent.index)
         noisy = gameState.getAgentDistances()
 
@@ -161,6 +160,7 @@ class BeliefTracker:
             exact = gameState.getAgentPosition(opp)
             new_belief = util.Counter()
 
+            # if we know the exact location (in 5 dist)
             if exact is not None:
                 new_belief[exact] = 1.0
             else:
@@ -258,7 +258,7 @@ class BaseCaptureAgent(CaptureAgent):
 
     def pickAction(self, gameState):
         # We define this on our attack/defend agents
-        util.raiseNotDefined()
+        raise NotImplementedError()
 
     # --- helpers -----------------------------------------------------------
 
