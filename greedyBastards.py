@@ -127,7 +127,7 @@ class BeliefTracker:
     Transition model: uniform over legal moves (including stay, cheaply).
     """
 
-    def __init__(self, agent, gameState):
+    def __init__(self, agent: CaptureAgent, gameState: GameState):
         self.agent = agent
         self.opponents = agent.getOpponents(gameState)
         self.walls = gameState.getWalls()
@@ -231,7 +231,8 @@ class BeliefTracker:
 
 
 class BaseCaptureAgent(CaptureAgent):
-    """Shared machinery: belief tracking, danger-aware A* helpers, home detection."""
+    """Since chooseAction logic, and other helpers can be shared across agents,
+    this base class provides common functionality."""
 
     def registerInitialState(self, gameState):
         CaptureAgent.registerInitialState(self, gameState)

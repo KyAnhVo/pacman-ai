@@ -29,7 +29,7 @@ import game
 import util
 from captureAgents import CaptureAgent
 from game import Directions
-from myTeam import DefenseAgent, OffenseAgent
+from greedyBastards import DefenseAgent, OffenseAgent
 from util import nearestPoint
 
 #################
