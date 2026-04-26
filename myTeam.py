@@ -14,7 +14,6 @@
 
 import random
 import time
-from asyncio.unix_events import SelectorEventLoop
 from enum import Enum
 
 import game
