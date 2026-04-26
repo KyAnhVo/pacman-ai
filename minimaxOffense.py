@@ -6,6 +6,10 @@ from game import Actions, Directions, Grid
 from layout import Layout
 from util import manhattanDistance
 
+########################
+# Enemy Belief Tracker #
+########################
+
 
 class EnemyBeliefTracker:
     """
@@ -13,7 +17,7 @@ class EnemyBeliefTracker:
     This is one pair of (ally, enemy), so O(n^2) pairs for n agents each team.
 
     Note: this belief tracker works the best when allies are further away from each other, thus the
-    intersected area is small
+    intersected area is small due to intersection.
     """
 
     def __init__(
@@ -84,6 +88,9 @@ class EnemyBeliefTracker:
 
         self.enemy_position_distribution = new_belief
 
+    def update_non_naive(self, gameState: GameState):
+        pass
+
     def update_with_ally(self, ally: EnemyBeliefTracker):
         """
         Intersect our enemy position belief with ally enemy position belief
@@ -95,8 +102,59 @@ class EnemyBeliefTracker:
         self.enemy_position_distribution = new_belief
         ally.enemy_position_distribution = new_belief
 
+    def get_proximity_value(self, pos):
+        """
+        Gets proximity value from position to current.
+        """
 
-class GreedyThiefAgent(CaptureAgent):
+        return sum(
+            manhattanDistance(position, pos)
+            for position in self.enemy_position_distribution
+        ) / len(self.enemy_position_distribution)
+
+    def update(self, gameState):
+        if self.naive:
+            self.update_naive(gameState)
+        else:
+            self.update_non_naive(gameState)
+
+
+###########################
+# Entry point calculation #
+###########################
+
+
+class EntryPoints:
+    def __init__(self, layout: Layout, game_state: GameState, is_red: bool):
+        self.FOOD_CLUSTER_MIN_MAX_DIST = 3
+        self.layout = layout
+        self.foods = set(
+            (game_state.getRedFood() if is_red else game_state.getBlueFood()).asList()
+        )
+        self.entryPoints: set = self.calculate_entries()
+
+    def group_foods(self):
+        """
+        Group foods together, close within FOOD_CLUSTER_MINI_MAX_DIST
+        """
+        for pos in self.foods:
+            pass
+
+    def calculate_entries(self):
+        """
+        Calculate the entry point set greedily.
+        Greedy heuristic: choose the cell that forces the highest increase in average
+        distance to the food groups
+        """
+        return set()
+
+
+###################
+# Offensive Agent #
+###################
+
+
+class GreedyPointAgent(CaptureAgent):
     """
     Agent idea (this is offense agent btw):
 
