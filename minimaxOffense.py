@@ -5,7 +5,7 @@ from collections import deque
 
 from capture import SIGHT_RANGE, GameState
 from captureAgents import CaptureAgent
-from game import Actions, Directions, Grid
+from game import Actions, AgentState, Directions, Grid
 from greedyBastards import DefenseAgent
 from layout import Layout
 from util import PriorityQueue, manhattanDistance
@@ -18,10 +18,6 @@ from util import PriorityQueue, manhattanDistance
 class EnemyBeliefTracker:
     """
     Tracks the belief distribution of enemy positions based on sonar noise.
-    This is one pair of (ally, enemy), so O(n^2) pairs for n agents each team.
-
-    Note: this belief tracker works the best when allies are further away from each other, thus the
-    intersected area is small due to intersection.
     """
 
     def __init__(
@@ -49,8 +45,8 @@ class EnemyBeliefTracker:
             1. stretch the distribution to up, down, left, right by 1 (essentially disable
                 current cell, add one to each of up, down, left, right of such cell (only
                 legal ones though, essentially flooding enemy cells.))
-            2. Define the square ring defining the possible position of the cell given
-                the by the enemyDistance (with noise), then intersect the square ring with
+            2. Define the square defining the possible position of the cell given
+                the by the enemyDistance (with noise), then intersect the square with
                 the stretched distribution
         """
 
@@ -71,9 +67,8 @@ class EnemyBeliefTracker:
                 stretched.add((nx, ny))
 
         # 2. Noisy observation via state.noise
-        noise_list = getattr(gameState, "noise", None)
+        noise_list = gameState.noise
         noise_config = noise_list[self.enemy_index] if noise_list else None
-
         if noise_config is not None and noise_config.pos is not None:
             nx_obs, ny_obs = noise_config.pos
             nx_obs, ny_obs = int(nx_obs), int(ny_obs)
@@ -288,7 +283,7 @@ class GreedyPointAgent(CaptureAgent):
                 if action is not None:
                     return action
 
-            # Capsule close? rush it via minimax
+            # Capsule close
             if capsules:
                 print("Capsule close, in danger, rush capsule")
                 nearest_cap = min(
@@ -305,7 +300,7 @@ class GreedyPointAgent(CaptureAgent):
                     if action is not None:
                         return action
 
-            # Maybe eat a close, safe food
+            # get close food
             if food_list:
                 print("Safe food close, in danger, eat safe food")
                 close_food = [
@@ -367,11 +362,11 @@ class GreedyPointAgent(CaptureAgent):
         """Return (maze_dist, pos, enemy_idx) of nearest dangerous ghost, or (None, None, None)."""
         best = (None, None, None)
         for enemy in self.enemy_indices:
-            es = gameState.getAgentState(enemy)
+            enemy_state: AgentState = gameState.getAgentState(enemy)
             # On their home side as ghost, not scared = threat
-            if es.isPacman:
+            if enemy_state.isPacman:
                 continue
-            if es.scaredTimer > 1:
+            if enemy_state.scaredTimer > 1:
                 continue
             exact = gameState.getAgentPosition(enemy)
             if exact is None:

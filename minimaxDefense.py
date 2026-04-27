@@ -16,8 +16,9 @@ from util import PriorityQueue, manhattanDistance
 
 
 class EntryPoints:
+    FOOD_CLUSTER_WEIGHT_DIST = 2
+
     def __init__(self, layout: Layout, game_state: GameState, is_red: bool):
-        self.FOOD_CLUSTER_MIN_MAX_DIST = 3
         self.layout = layout
         self.foods = set(
             (game_state.getRedFood() if is_red else game_state.getBlueFood()).asList()
@@ -26,10 +27,9 @@ class EntryPoints:
 
     def group_foods(self):
         """
-        Group foods together, close within FOOD_CLUSTER_MINI_MAX_DIST
+        Group foods together, close within FOOD_CLUSTER_WEIGHT_DIST
         """
-        for pos in self.foods:
-            pass
+        raise NotImplementedError()
 
     def calculate_entries(self):
         """
@@ -37,4 +37,4 @@ class EntryPoints:
         Greedy heuristic: choose the cell that forces the highest increase in average
         distance to the food groups
         """
-        return set()
+        raise NotImplementedError()
