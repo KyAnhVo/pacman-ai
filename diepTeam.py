@@ -231,7 +231,7 @@ class MCTSCaptureAgent(CaptureAgent):
         root = MCTSNode(agent=self, gameState=gameState)
         start = time.time()
 
-        while time.time() - start < 0.5:
+        while time.time() - start < 0.05:
             node = MCTSNode.select(root)
             if node.untriedActions:
                 node = MCTSNode.expand(node)
